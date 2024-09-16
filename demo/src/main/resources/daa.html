@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auction</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<h1>Auction</h1>
+<p>Current Bid: $<span id="currentBid">0</span></p>
+
+<form id="bidForm">
+    <input type="text" id="bidAmount" placeholder="Enter your bid">
+    <button type="submit">Bid</button>
+</form>
+
+<script>
+    var stompClient = null;
+
+    function connect() {
+        var socket = new SockJS('/auction-websocket');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            stompClient.subscribe('/topic/auction', function (message) {
+                var bid = JSON.parse(message.body);
+                document.getElementById("currentBid").innerHTML = bid.bidAmount;
+            });
+        });
+    }
+
+    function sendBid() {
+        var bidAmount = document.getElementById("bidAmount").value;
+        stompClient.send("/app/bid", {}, JSON.stringify({'bidAmount': bidAmount, 'bidderName': 'User'}));
+    }
+
+    document.getElementById("bidForm").addEventListener("submit", function (event) {
+        event.preventDefault();
+        sendBid();
+    });
+
+    connect();
+</script>
+</body>
+</html>
